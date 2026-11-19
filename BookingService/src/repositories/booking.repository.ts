@@ -29,14 +29,14 @@ export async function createIdempotencyKey(key: string, bookingId: number) {
     return idempotencyKey;
 }
 
-export async function getIdempotencyKeyWithLock(tx: Prisma.TransactionClient, key: string,) {
+export async function getIdempotencyKeyWithLock(tx: Prisma.TransactionClient, key: string) {
     if(!isValidUUID(key)) {
         throw new BadRequestError("Invalid idempotency key format");
     }
 
-    const idempotencyKey: Array<IdempotencyKey> = await tx.$queryRaw(
-        Prisma.raw(`SELECT * FROM IdempotencyKey WHERE idemKey = '${key}' FOR UPDATE;`)
-    )
+    const idempotencyKey = await tx.$queryRaw<Array<IdempotencyKey>>(
+        Prisma.sql`SELECT * FROM IdempotencyKey WHERE idemKey = ${key} FOR UPDATE;`
+    );
 
     if(!idempotencyKey || idempotencyKey.length === 0) {
         throw new NotFoundError("Idempotency key not found");

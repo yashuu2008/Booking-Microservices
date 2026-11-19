@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airbnb - Booking Confirmation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #ff385c;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ff385c;
+            letter-spacing: -0.5px;
+        }
+        .badge {
+            display: inline-block;
+            background: #e6f7ec;
+            color: #028a39;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+        .details-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff385c;
+            padding-top: 12px;
+        }
+        .label {
+            color: #717171;
+            font-weight: 500;
+        }
+        .value {
+            color: #222222;
+            font-weight: 600;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">airbnb</div>
+            <h2>Reservation Confirmed!</h2>
+            <div class="badge">Booking #{{bookingId}} - {{status}}</div>
+        </div>
+
+        <p>Hello,</p>
+        <p>Great news! Your reservation has been successfully confirmed. Below are your reservation details:</p>
+
+        <div class="details-card">
+            <div class="detail-row">
+                <span class="label">Booking ID:</span>
+                <span class="value">#{{bookingId}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Hotel ID:</span>
+                <span class="value">{{hotelId}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Room Category ID:</span>
+                <span class="value">{{roomCategoryId}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Total Guests:</span>
+                <span class="value">{{totalGuests}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Check-In Date:</span>
+                <span class="value">{{checkInDate}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Check-Out Date:</span>
+                <span class="value">{{checkOutDate}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Total Amount Paid:</span>
+                <span class="value">${{bookingAmount}}</span>
+            </div>
+        </div>
+
+        <p>We hope you enjoy your stay! If you have any questions or need to make adjustments, please manage your reservation through our platform.</p>
+
+        <div class="footer">
+            <p>Thank you for choosing Airbnb.</p>
+            <p>© 2026 Airbnb Platform. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

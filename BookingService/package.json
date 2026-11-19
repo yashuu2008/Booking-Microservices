@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "axios": "^1.7.9",
     "bullmq": "^5.53.1",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",

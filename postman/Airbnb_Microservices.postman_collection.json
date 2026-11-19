@@ -1,0 +1,933 @@
+{
+  "info": {
+    "name": "Airbnb Distributed Microservices Platform",
+    "_postman_id": "e6f1a8c9-3d20-4e55-9b78-8d4889c02d1a",
+    "description": "Complete, production-ready Postman collection for testing and verifying all 4 services: AuthInGo (8080 + Reverse Proxy Gateway), HotelService (3000), BookingService (3001), and NotificationService (3002). Includes automatic JWT token capture, dynamic date generation, distributed lock testing, and two-phase idempotency verification.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Auth & API Gateway (Port 8080)",
+      "description": "Identity management, RBAC, JWT tokens, OTP verification, and edge gateway routing.",
+      "item": [
+        {
+          "name": "Health Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{authBaseUrl}}/ping",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.Id) {",
+                  "    pm.environment.set('userId', jsonData.data.Id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alex_dev\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/signup",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "signup"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User Login (Captures JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('jwtToken', jsonData.data);",
+                  "    console.log('JWT Token captured: ' + jsonData.data);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/login",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile (Authenticated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{authBaseUrl}}/profile",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{authBaseUrl}}/roles",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.Id) {",
+                  "    pm.environment.set('roleId', jsonData.data.Id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"host\",\n  \"description\": \"Property Host Manager\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/roles",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role to User (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{authBaseUrl}}/roles/{{userId}}/assign/{{roleId}}",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "{{userId}}",
+                "assign",
+                "{{roleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"purpose\": \"email_verification\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/otp/send",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "otp",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"code\": \"123456\",\n  \"purpose\": \"email_verification\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/otp/verify",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "otp",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"purpose\": \"email_verification\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/api/otp/resend",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "otp",
+                "resend"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Hotel Service (Port 3000)",
+      "description": "Hotel catalog, room inventory slotting, automated BullMQ room generation, and availability scheduler.",
+      "item": [
+        {
+          "name": "Health Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/ping",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Hotel Property",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.environment.set('hotelId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grand Azure Luxury Resort\",\n  \"address\": \"742 Evergreen Terrace\",\n  \"location\": \"Goa, India\",\n  \"rating\": 4.8,\n  \"ratingCount\": 120\n}"
+            },
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/hotels",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hotel by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/hotels/{{hotelId}}",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                "{{hotelId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Hotels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/hotels",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query Available Rooms by Date Range",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const today = new Date();",
+                  "const checkIn = new Date(today);",
+                  "checkIn.setDate(today.getDate() + 1);",
+                  "const checkOut = new Date(today);",
+                  "checkOut.setDate(today.getDate() + 4);",
+                  "pm.environment.set('checkInDate', checkIn.toISOString().split('T')[0]);",
+                  "pm.environment.set('checkOutDate', checkOut.toISOString().split('T')[0]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/rooms/available?roomCategoryId={{roomCategoryId}}&checkInDate={{checkInDate}}&checkOutDate={{checkOutDate}}",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "available"
+              ],
+              "query": [
+                {
+                  "key": "roomCategoryId",
+                  "value": "{{roomCategoryId}}"
+                },
+                {
+                  "key": "checkInDate",
+                  "value": "{{checkInDate}}"
+                },
+                {
+                  "key": "checkOutDate",
+                  "value": "{{checkOutDate}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dispatch Room Generation Queue Job (BullMQ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCategoryId\": 1,\n  \"startDate\": \"2026-12-01T00:00:00.000Z\",\n  \"endDate\": \"2026-12-31T00:00:00.000Z\",\n  \"priceOverride\": 350,\n  \"batchSize\": 50\n}"
+            },
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/room-generation",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "room-generation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room Availability Scheduler - Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/scheduler/status",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scheduler",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room Availability Scheduler - Manual Extend",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/scheduler/extend",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scheduler",
+                "extend"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Hotel (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{hotelBaseUrl}}/api/v1/hotels/{{hotelId}}",
+              "host": [
+                "{{hotelBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                "{{hotelId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Booking Service (Port 3001)",
+      "description": "Distributed Redlock concurrency control, two-phase idempotent checkout, and async email dispatch.",
+      "item": [
+        {
+          "name": "Health Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bookingBaseUrl}}/api/v1/ping",
+              "host": [
+                "{{bookingBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Booking (Phase 1: Receives Idempotency Key)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const today = new Date();",
+                  "const checkIn = new Date(today);",
+                  "checkIn.setDate(today.getDate() + 1);",
+                  "const checkOut = new Date(today);",
+                  "checkOut.setDate(today.getDate() + 3);",
+                  "pm.environment.set('bookingCheckIn', checkIn.toISOString().split('T')[0]);",
+                  "pm.environment.set('bookingCheckOut', checkOut.toISOString().split('T')[0]);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('bookingId', jsonData.data.bookingId);",
+                  "    pm.environment.set('idempotencyKey', jsonData.data.idempotencyKey);",
+                  "    console.log('Captured Booking ID: ' + jsonData.data.bookingId);",
+                  "    console.log('Captured Idempotency Key: ' + jsonData.data.idempotencyKey);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"hotelId\": 1,\n  \"roomCategoryId\": 1,\n  \"totalGuests\": 2,\n  \"bookingAmount\": 500,\n  \"checkInDate\": \"{{bookingCheckIn}}\",\n  \"checkOutDate\": \"{{bookingCheckOut}}\"\n}"
+            },
+            "url": {
+              "raw": "{{bookingBaseUrl}}/api/v1/bookings",
+              "host": [
+                "{{bookingBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Booking (Phase 2: Atomic Idempotent Finalization)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Booking is CONFIRMED', function() {",
+                  "    pm.expect(jsonData.data.status).to.eql('CONFIRMED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{bookingBaseUrl}}/api/v1/bookings/confirm/{{idempotencyKey}}",
+              "host": [
+                "{{bookingBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "confirm",
+                "{{idempotencyKey}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Idempotency - Retry Finalized Key (Expects 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 for finalized retry', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Error message mentions already finalized', function() {",
+                  "    pm.expect(jsonData.message).to.include('already finalized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{bookingBaseUrl}}/api/v1/bookings/confirm/{{idempotencyKey}}",
+              "host": [
+                "{{bookingBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "confirm",
+                "{{idempotencyKey}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{bookingBaseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": [
+                "{{bookingBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Notification Service (Port 3002)",
+      "description": "Asynchronous BullMQ worker consuming queue-mailer jobs and compiling Handlebars templates.",
+      "item": [
+        {
+          "name": "Health Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationBaseUrl}}/api/v1/ping",
+              "host": [
+                "{{notificationBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Welcome Email Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"traveler@example.com\",\n  \"subject\": \"Welcome to Airbnb!\",\n  \"templateId\": \"welcome\",\n  \"params\": {\n    \"name\": \"Alex\",\n    \"appName\": \"Airbnb Platform\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{notificationBaseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{notificationBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send OTP Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"traveler@example.com\",\n  \"subject\": \"Your Airbnb Verification Code\",\n  \"templateId\": \"email_verification_otp\",\n  \"params\": {\n    \"otp\": \"984210\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{notificationBaseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{notificationBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Booking Confirmation Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"traveler@example.com\",\n  \"subject\": \"Reservation Confirmed - Booking #1\",\n  \"templateId\": \"booking_confirmation\",\n  \"params\": {\n    \"bookingId\": 1,\n    \"hotelId\": 1,\n    \"roomCategoryId\": 1,\n    \"totalGuests\": 2,\n    \"bookingAmount\": 500,\n    \"checkInDate\": \"2026-12-01\",\n    \"checkOutDate\": \"2026-12-04\",\n    \"status\": \"CONFIRMED\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{notificationBaseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{notificationBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Reverse Proxy Gateway Routing (Via :8080)",
+      "description": "Verifies the AuthInGo reverse proxy gateway forwarding requests to HotelService & BookingService with X-User-ID identity header injection.",
+      "item": [
+        {
+          "name": "Proxied: List Hotels (Via Gateway)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{authBaseUrl}}/hotelservice/api/v1/hotels",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "hotelservice",
+                "api",
+                "v1",
+                "hotels"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Proxied: Create Booking (Via Gateway)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const today = new Date();",
+                  "const checkIn = new Date(today);",
+                  "checkIn.setDate(today.getDate() + 1);",
+                  "const checkOut = new Date(today);",
+                  "checkOut.setDate(today.getDate() + 3);",
+                  "pm.environment.set('proxyBookingCheckIn', checkIn.toISOString().split('T')[0]);",
+                  "pm.environment.set('proxyBookingCheckOut', checkOut.toISOString().split('T')[0]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"hotelId\": 1,\n  \"roomCategoryId\": 1,\n  \"totalGuests\": 2,\n  \"bookingAmount\": 450,\n  \"checkInDate\": \"{{proxyBookingCheckIn}}\",\n  \"checkOutDate\": \"{{proxyBookingCheckOut}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authBaseUrl}}/bookingservice/api/v1/bookings",
+              "host": [
+                "{{authBaseUrl}}"
+              ],
+              "path": [
+                "bookingservice",
+                "api",
+                "v1",
+                "bookings"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,9 @@ function connectToRedis() {
 
         return () => {
             if (!connection) {
-                connection = new IORedis(serverConfig.REDIS_SERVER_URL);
+                connection = new IORedis(serverConfig.REDIS_SERVER_URL, {
+                    maxRetriesPerRequest: null,
+                });
                 return connection;
             }
 

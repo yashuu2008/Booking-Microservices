@@ -17,7 +17,7 @@ function loadEnv() {
 loadEnv();
 
 export const serverConfig: ServerConfig = {
-    PORT: Number(process.env.PORT) || 3001,
+    PORT: Number(process.env.PORT) || 3002,
     REDIS_PORT: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
     REDIS_HOST: process.env.REDIS_HOST || 'localhost',
     MAIL_PASS: process.env.MAIL_PASS || '',

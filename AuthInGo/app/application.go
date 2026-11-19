@@ -1,6 +1,7 @@
 package app
 
 import (
+	"AuthInGo/clients"
 	dbConfig "AuthInGo/config/db"
 	config "AuthInGo/config/env"
 	"AuthInGo/controllers"
@@ -51,16 +52,26 @@ func (app *Application) Run() error {
 	rr := repo.NewRoleRepository(db)
 	rpr := repo.NewRolePermissionRepository(db)
 	urr := repo.NewUserRoleRepository(db)
-	us := services.NewUserService(ur)
+	otpr := repo.NewOTPRepository(db)
+
+	notificationBaseURL := config.GetString("NOTIFICATION_SERVICE_URL", "http://localhost:3002")
+	nc := clients.NewNotificationClient(notificationBaseURL)
+
 	rs := services.NewRoleService(rr, rpr, urr)
+	us := services.NewUserService(ur, rs)
+	otps := services.NewOTPService(otpr, nc)
+
 	uc := controllers.NewUserController(us)
 	rc := controllers.NewRoleController(rs)
+	otpc := controllers.NewOTPController(otps)
+
 	uRouter := router.NewUserRouter(uc)
 	rRouter := router.NewRoleRouter(rc)
+	otpRouter := router.NewOTPRouter(otpc)
 
 	server := &http.Server{
 		Addr:         app.Config.Addr,
-		Handler:      router.SetupRouter(uRouter, rRouter),
+		Handler:      router.SetupRouter(uRouter, rRouter, otpRouter),
 		ReadTimeout:  10 * time.Second, // Set read timeout to 10 seconds
 		WriteTimeout: 10 * time.Second, // Set write timeout to 10 seconds
 	}

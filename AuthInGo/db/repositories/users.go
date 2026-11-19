@@ -138,7 +138,7 @@ func (u *UserRepositoryImpl) GetByID(id string) (*models.User, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Println("No user found with the given ID")
-			return nil, err
+			return nil, nil
 		} else {
 			fmt.Println("Error scanning user:", err)
 			return nil, err

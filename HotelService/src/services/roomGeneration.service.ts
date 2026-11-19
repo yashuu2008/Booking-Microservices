@@ -33,9 +33,14 @@ export async function generateRooms(jobData: RoomGenerationJob ) {
         throw new BadRequestError(`Start date must be before end date`);
     }
 
-    if (startDate < new Date()) {
-        logger.error(`Start date must be in the future`);
-        throw new BadRequestError(`Start date must be in the future`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfStartDate = new Date(startDate);
+    startOfStartDate.setHours(0, 0, 0, 0);
+
+    if (startOfStartDate < today) {
+        logger.error(`Start date must be today or in the future`);
+        throw new BadRequestError(`Start date must be today or in the future`);
     }
     
 

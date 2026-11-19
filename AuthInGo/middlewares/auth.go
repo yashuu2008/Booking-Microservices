@@ -71,7 +71,16 @@ func RequireAllRoles(roles ...string) func(http.Handler) http.Handler {
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			userIdStr := r.Context().Value("userID").(string)
+			userIdVal := r.Context().Value("userID")
+			if userIdVal == nil {
+				http.Error(w, "Unauthorized: user context missing", http.StatusUnauthorized)
+				return
+			}
+			userIdStr, ok := userIdVal.(string)
+			if !ok || userIdStr == "" {
+				http.Error(w, "Unauthorized: invalid user context", http.StatusUnauthorized)
+				return
+			}
 			userId, err := strconv.ParseInt(userIdStr, 10, 64)
 			if err != nil {
 				http.Error(w, "Invalid user ID", http.StatusUnauthorized)
@@ -112,7 +121,16 @@ func RequireAnyRole(roles ...string) func(http.Handler) http.Handler {
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			userIdStr := r.Context().Value("userID").(string)
+			userIdVal := r.Context().Value("userID")
+			if userIdVal == nil {
+				http.Error(w, "Unauthorized: user context missing", http.StatusUnauthorized)
+				return
+			}
+			userIdStr, ok := userIdVal.(string)
+			if !ok || userIdStr == "" {
+				http.Error(w, "Unauthorized: invalid user context", http.StatusUnauthorized)
+				return
+			}
 			userId, err := strconv.ParseInt(userIdStr, 10, 64)
 			if err != nil {
 				http.Error(w, "Invalid user ID", http.StatusUnauthorized)

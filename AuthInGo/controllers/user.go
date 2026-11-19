@@ -23,7 +23,11 @@ func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 	// extract userid from url parameters
 	userId := r.URL.Query().Get("id")
 	if userId == "" {
-		userId = r.Context().Value("userID").(string) // Fallback to context if not in URL
+		if ctxVal := r.Context().Value("userID"); ctxVal != nil {
+			if strVal, ok := ctxVal.(string); ok {
+				userId = strVal
+			}
+		}
 	}
 
 	fmt.Println("User ID from context or query:", userId)
@@ -38,7 +42,7 @@ func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if user == nil {
-		utils.WriteJsonErrorResponse(w, http.StatusNotFound, "User not found", fmt.Errorf("user with ID %d not found", userId))
+		utils.WriteJsonErrorResponse(w, http.StatusNotFound, "User not found", fmt.Errorf("user with ID %s not found", userId))
 		return
 	}
 	utils.WriteJsonSuccessResponse(w, http.StatusOK, "User fetched successfully", user)

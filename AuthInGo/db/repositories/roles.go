@@ -30,6 +30,9 @@ func (r *RoleRepositoryImpl) GetRoleById(id int64) (*models.Role, error) {
 
 	role := &models.Role{}
 	if err := row.Scan(&role.Id, &role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return role, nil
@@ -41,6 +44,9 @@ func (r *RoleRepositoryImpl) GetRoleByName(name string) (*models.Role, error) {
 
 	role := &models.Role{}
 	if err := row.Scan(&role.Id, &role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return role, nil

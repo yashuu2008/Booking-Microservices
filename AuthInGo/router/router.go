@@ -1,6 +1,7 @@
 package router
 
 import (
+	config "AuthInGo/config/env"
 	"AuthInGo/controllers"
 	"AuthInGo/utils"
 
@@ -12,7 +13,7 @@ type Router interface {
 	Register(r chi.Router)
 }
 
-func SetupRouter(UserRouter Router, RoleRouter Router) *chi.Mux {
+func SetupRouter(UserRouter Router, RoleRouter Router, OTPRouter Router) *chi.Mux {
 
 	chiRouter := chi.NewRouter()
 
@@ -23,13 +24,19 @@ func SetupRouter(UserRouter Router, RoleRouter Router) *chi.Mux {
 
 	chiRouter.Get("/ping", controllers.PingHandler)
 
-	chiRouter.HandleFunc("/fakestoreservice/*", utils.ProxyToService("https://fakestoreapi.in", "/fakestoreservice"))
+	// Reverse proxy routes for downstream microservices
+	hotelServiceURL := config.GetString("HOTEL_SERVICE_URL", "http://localhost:3000")
+	bookingServiceURL := config.GetString("BOOKING_SERVICE_URL", "http://localhost:3001")
+
+	chiRouter.HandleFunc("/hotelservice/*", utils.ProxyToService(hotelServiceURL, "/hotelservice"))
+	chiRouter.HandleFunc("/bookingservice/*", utils.ProxyToService(bookingServiceURL, "/bookingservice"))
 
 	UserRouter.Register(chiRouter)
 	RoleRouter.Register(chiRouter)
+	if OTPRouter != nil {
+		OTPRouter.Register(chiRouter)
+	}
 
 	return chiRouter
 
 }
-
-// http://localhost:3001/fakestoreservice/products/category

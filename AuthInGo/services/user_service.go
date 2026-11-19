@@ -19,11 +19,13 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	userRepository db.UserRepository
+	roleService    RoleService
 }
 
-func NewUserService(_userRepository db.UserRepository) UserService {
+func NewUserService(_userRepository db.UserRepository, _roleService RoleService) UserService {
 	return &UserServiceImpl{
 		userRepository: _userRepository,
+		roleService:    _roleService,
 	}
 }
 
@@ -54,18 +56,23 @@ func (u *UserServiceImpl) CreateUser(payload *dto.CreateUserRequestDTO) (*models
 		return nil, err
 	}
 
-	// Step 3. Return the created user
+	// Step 3. Automatically assign default "user" role (roleId: 2) to new user
+	var defaultUserRoleId int64 = 2
+	err = u.roleService.AssignRoleToUser(user.Id, defaultUserRoleId)
+	if err != nil {
+		fmt.Printf("Warning: Failed to assign default role to user %d: %v\n", user.Id, err)
+	}
+
+	// Step 4. Return the created user
 	return user, nil
 }
 
 func (u *UserServiceImpl) LoginUser(payload *dto.LoginUserRequestDTO) (string, error) {
-	// Pre-requisite: This function will be given email and password as parameter, which we can hardcode for now
 	email := payload.Email
 	password := payload.Password
 
 	// Step 1. Make a repository call to get the user by email
 	user, err := u.userRepository.GetByEmail(email)
-
 	if err != nil {
 		fmt.Println("Error fetching user by email:", err)
 		return "", err
@@ -77,30 +84,26 @@ func (u *UserServiceImpl) LoginUser(payload *dto.LoginUserRequestDTO) (string, e
 		return "", fmt.Errorf("no user found with email: %s", email)
 	}
 
-	// Step 3. If user exists, check the password using utils.CheckPasswordHash
+	// Step 3. Check the password using utils.CheckPasswordHash
 	isPasswordValid := utils.CheckPasswordHash(password, user.Password)
-
 	if !isPasswordValid {
 		fmt.Println("Password does not match")
-		return "", nil
+		return "", fmt.Errorf("invalid email or password")
 	}
 
-	// Step 4. If password matches, print a JWT token, else return error saying password does not match
+	// Step 4. Sign JWT token
 	jwtPayload := jwt.MapClaims{
 		"email": user.Email,
 		"id":    user.Id,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtPayload)
-
 	tokenString, err := token.SignedString([]byte(env.GetString("JWT_SECRET", "TOKEN")))
-
 	if err != nil {
 		fmt.Println("Error signing token:", err)
 		return "", err
 	}
 
-	fmt.Println("JWT Token:", tokenString)
-
+	fmt.Println("JWT Token generated successfully")
 	return tokenString, nil
 }
