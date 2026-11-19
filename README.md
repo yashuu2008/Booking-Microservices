@@ -12,7 +12,7 @@
 
 A polyglot, distributed hospitality reservation platform architected around high-concurrency booking workflows, materialized daily inventory slotting, and asynchronous event processing. Built with Go 1.24, TypeScript, Express 5, Prisma, Sequelize, Redis Redlock, and BullMQ.
 
-[Architecture](#architecture-overview) • [Services](#services-overview) • [Concurrency & Idempotency](#1-two-phase-distributed-booking--concurrency) • [Inter-Service Communication](#inter-service-communication) • [Tech Stack](#tech-stack) • [Project Structure](#project-structure) • [Getting Started](#getting-started) • [API Reference](#api-reference) • [Postman Suite](#1-automated-integration-suite-postman)
+[System Design Docs](./docs/design.md) • [Architecture](#architecture-overview) • [Services](#services-overview) • [Concurrency & Idempotency](#1-two-phase-distributed-booking--concurrency) • [Inter-Service Communication](#inter-service-communication) • [Tech Stack](#tech-stack) • [Project Structure](#project-structure) • [Getting Started](#getting-started) • [API Reference](#api-reference) • [Postman Suite](#1-automated-integration-suite-postman)
 
 ---
 
